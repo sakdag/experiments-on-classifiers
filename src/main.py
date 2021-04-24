@@ -2,8 +2,9 @@ import pandas
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-from src import knn, k_neighbors_regressor
+from src import knn, k_neighbors_regressor, decision_tree_regressor
 
 if __name__ == '__main__':
 
@@ -19,11 +20,12 @@ if __name__ == '__main__':
     print(df_selected)
 
     # Apply min-max normalization
-    normalized_df = (df_selected-df_selected.min())/(df_selected.max()-df_selected.min())
-    print(normalized_df)
+    df_selected.loc[:, df_selected.columns != 'actual_productivity'] = MinMaxScaler().\
+        fit_transform(df_selected.loc[:, df_selected.columns != 'actual_productivity'])
+    print(df_selected)
 
     # Shuffle elements of dataframe
-    shuffled_df = normalized_df.sample(frac=1)
+    shuffled_df = df_selected.sample(frac=1)
     print(shuffled_df)
 
     print("Running KNeighborsRegressor with default settings")
@@ -35,6 +37,16 @@ if __name__ == '__main__':
     print("MSE: ", k_neighbors_regressor_mse)
     print("RMSE: ", k_neighbors_regressor_rmse)
     print("MAPE: ", k_neighbors_regressor_mape, "\n")
+
+    print("Running DecisionTreeRegressor with default settings")
+
+    # Run DecisionTreeRegressor from sklearn and measure performance
+    decision_tree_regressor_mse, decision_tree_regressor_rmse, decision_tree_regressor_mape = \
+        decision_tree_regressor.measure_performance(shuffled_df, number_of_folds)
+
+    print("MSE: ", decision_tree_regressor_mse)
+    print("RMSE: ", decision_tree_regressor_rmse)
+    print("MAPE: ", decision_tree_regressor_mape, "\n")
 
     # Run knn and measure performance
     # knn.measure_performance(rest, split_dfs[i], k_value, columns_to_use)

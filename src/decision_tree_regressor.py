@@ -1,10 +1,10 @@
-# This class uses sklearn-KNeighborsRegressor to predict productivity in
+# This class uses sklearn.DecisionTreeRegressor to predict productivity in
 # garments_worker_productivity dataset.
 import numpy
 import numpy as np
 import pandas
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
 
 
 def measure_performance(df: pandas.DataFrame, number_of_folds: int):
@@ -15,7 +15,7 @@ def measure_performance(df: pandas.DataFrame, number_of_folds: int):
     rmse_list = list()
     mape_list = list()
 
-    neigh = KNeighborsRegressor()
+    regressor = DecisionTreeRegressor(random_state=0)
 
     for i in range(number_of_folds):
         # Get training set by appending elements other than current fold
@@ -26,10 +26,9 @@ def measure_performance(df: pandas.DataFrame, number_of_folds: int):
 
         test_set = split_dfs[i]
 
-        # Default k value for KNeighborsRegressor is 5
         x = train_set.drop(['actual_productivity'], axis=1)
         y = train_set[['actual_productivity']]
-        neigh.fit(x, y)
+        regressor.fit(x, y)
 
         for index, row in test_set.iterrows():
             test_data_x = row.drop(['actual_productivity'])
@@ -37,7 +36,7 @@ def measure_performance(df: pandas.DataFrame, number_of_folds: int):
             test_data_as_list = test_data_x.values.tolist()
 
             actual = list()
-            prediction = neigh.predict(numpy.array(test_data_as_list).reshape(1, -1))[0]
+            prediction = regressor.predict(numpy.array(test_data_as_list).reshape(1, -1))
             actual.append(row['actual_productivity'])
 
             # Calculate MSE
