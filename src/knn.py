@@ -3,7 +3,7 @@ import pandas
 
 # k_value describes k in k-nn
 # Currently columns_to_use expected to be only numeric columns, others will be added later
-def measure_performance(train_set: pandas.DataFrame, test_set: pandas.DataFrame, k_value: int, columns_to_use: list):
+def measure_performance(train_set: pandas.DataFrame, test_set: pandas.DataFrame, k_value: int, columns_to_use: set):
 
     # Calculate similarity between train and test data
     # If its one of k neighbors, add it's productivity to

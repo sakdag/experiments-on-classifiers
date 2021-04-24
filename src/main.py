@@ -1,36 +1,40 @@
 import pandas
 import pandas as pd
 import numpy as np
+from sklearn import preprocessing
 
-from src import knn
+from src import knn, k_neighbors_regressor
 
 if __name__ == '__main__':
 
     k_value = 5
     number_of_folds = 3
 
-    df = pd.read_csv("C:/Users/serha/Desktop/Ms_1.2/CEng514-DM/HW2/experiments-on-classifiers/"
-                     "resources/garments_worker_productivity.csv")
+    df = pd.read_csv("C:/Users/sakdag/Desktop/Ms_1.2/CEng514/HW2/experiments-on-classifiers/resources/"
+                     "garments_worker_productivity.csv")
     print(df)
 
-    shuffled_df = df.sample(frac=1)
+    # Eliminate not numeric and missing element columns for now
+    df_selected = df.drop(['date', 'quarter', 'department', 'day', 'wip'], axis=1)
+    print(df_selected)
+
+    # Apply min-max normalization
+    normalized_df = (df_selected-df_selected.min())/(df_selected.max()-df_selected.min())
+    print(normalized_df)
+
+    # Shuffle elements of dataframe
+    shuffled_df = normalized_df.sample(frac=1)
     print(shuffled_df)
 
-    split_dfs = np.array_split(shuffled_df, number_of_folds)
+    print("Running KNeighborsRegressor with default settings")
 
-    columns_to_use = {"smv", "team"}
+    # Run KNeighborsRegressor from sklearn and measure performance
+    k_neighbors_regressor_mse, k_neighbors_regressor_rmse, k_neighbors_regressor_mape = \
+        k_neighbors_regressor.measure_performance(shuffled_df, number_of_folds)
 
-    for i in range(number_of_folds):
-        # Get training set by appending elements other than current fold
-        rest = pandas.DataFrame()
-        for j in range(number_of_folds):
-            if j != i:
-                rest = rest.append(split_dfs[j])
+    print("MSE: ", k_neighbors_regressor_mse)
+    print("RMSE: ", k_neighbors_regressor_rmse)
+    print("MAPE: ", k_neighbors_regressor_mape, "\n")
 
-        print(split_dfs[i])
-        print(rest)
-
-        # Run knn and measure performance
-        knn.measure_performance(rest, split_dfs[i], k_value, columns_to_use)
-
-
+    # Run knn and measure performance
+    # knn.measure_performance(rest, split_dfs[i], k_value, columns_to_use)
