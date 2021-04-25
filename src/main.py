@@ -1,8 +1,8 @@
 import time
 from enum import Enum
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder
-from src import knn, k_neighbors_regressor, decision_tree_regressor
+from sklearn.preprocessing import OrdinalEncoder
+from src import knn, k_neighbors_regressor, decision_tree_regressor, naive_bayes
 
 
 class DistanceMetrics(Enum):
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     print(df_selected)
 
     # Shuffle elements of dataframe
-    # shuffled_df = df_selected.sample(frac=1).reset_index(drop=True)
-    # print(shuffled_df)
+    shuffled_df = df_selected.sample(frac=1).reset_index(drop=True)
+    print(shuffled_df)
 
     shuffled_df = df_selected.copy()
 
@@ -49,10 +49,10 @@ if __name__ == '__main__':
     # Normalize dataset for knn, note that normalization is not used for library methods
     normalized_df = shuffled_df.copy()
 
-    # Apply min-max normalization
-    normalized_df.loc[:, normalized_df.columns != 'actual_productivity'] = MinMaxScaler(). \
-        fit_transform(normalized_df.loc[:, normalized_df.columns != 'actual_productivity'])
-    print(normalized_df)
+    # # Apply min-max normalization
+    # normalized_df.loc[:, normalized_df.columns != 'actual_productivity'] = MinMaxScaler(). \
+    #     fit_transform(normalized_df.loc[:, normalized_df.columns != 'actual_productivity'])
+    # print(normalized_df)
 
     # Run knn for k values from 2 to 10
     for k_value in range(2, 11):
@@ -106,4 +106,17 @@ if __name__ == '__main__':
     print("MSE: ", decision_tree_regressor_mse)
     print("RMSE: ", decision_tree_regressor_rmse)
     print("MAPE: ", decision_tree_regressor_mape)
+    print("Time passed: ", end_time - start_time, " seconds\n")
+
+    print("Running BayesianRidge regression with default settings")
+
+    # Run BayesianRidge regression from sklearn and measure performance
+    start_time = time.time()
+    bayesian_ridge_mse, bayesian_ridge_rmse, bayesian_ridge_mape = \
+        naive_bayes.measure_performance(shuffled_df, number_of_folds)
+    end_time = time.time()
+
+    print("MSE: ", bayesian_ridge_mse)
+    print("RMSE: ", bayesian_ridge_rmse)
+    print("MAPE: ", bayesian_ridge_mape)
     print("Time passed: ", end_time - start_time, " seconds\n")
