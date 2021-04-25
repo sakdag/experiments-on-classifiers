@@ -41,8 +41,9 @@ def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int
 
             actual_productivity = list()
             actual_productivity.append(test_set_y[test_index])
-            current_distances = dict()
+            current_distances = list()
 
+            i = 0
             for train_index, train_row in train_set_x.iterrows():
 
                 first_point = numpy.array(train_row.values.tolist())
@@ -50,18 +51,22 @@ def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int
                 current_distance = dist.pairwise(np.expand_dims(first_point, axis=0),
                                                  np.expand_dims(second_point, axis=0))
 
-                current_distances[current_distance[0][0]] = train_set_y[train_index]
+                if i < k_value:
+                    current_distances.append((current_distance[0][0], train_set_y[train_index]))
+                    i += 1
+                else:
+                    for j in range(k_value):
+                        if current_distance[0][0] < current_distances[j][0]:
+                            current_distances.insert(j, (current_distance[0][0], train_set_y[train_index]))
+                            current_distances.pop()
+                            break
 
             # Calculate weighed average of k nearest neighbors
-            i = 1
             sum_of_productivity = 0
             sum_of_weights = 0
-            for key in sorted(current_distances.keys(), reverse=True):
-                sum_of_productivity += float(current_distances.get(key)) / float(key)
-                sum_of_weights += 1.0 / float(key)
-                i += 1
-                if i == k_value:
-                    break
+            for current_tuple in current_distances:
+                sum_of_productivity += float(current_tuple[1]) / float(current_tuple[0])
+                sum_of_weights += 1.0 / float(current_tuple[0])
 
             predicted_productivity = list()
             predicted_productivity.append(sum_of_productivity / sum_of_weights)
