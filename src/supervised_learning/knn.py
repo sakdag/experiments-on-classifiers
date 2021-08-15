@@ -1,17 +1,24 @@
-import numpy
+import argparse
+import os
+import time
+
 import numpy as np
-import pandas
+import pandas as pd
+
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from sklearn.neighbors import DistanceMetric
-from src.main import DistanceMetrics
+
+import src.preprocessing.preprocessing as prep
+import src.config.config as conf
+
+from src.enums.DistanceMetrics import DistanceMetrics
 
 
-def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int, distance_metric):
+def measure_performance(df: pd.DataFrame, k_value: int, number_of_folds: int, distance_metric):
 
     # Calculate similarity between train and test data
     # If its one of k neighbors, add it's productivity to
     # current_neighbors map
-
     split_dfs = np.array_split(df, number_of_folds)
 
     mse_list = list()
@@ -25,7 +32,7 @@ def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int
 
     for i in range(number_of_folds):
         # Get training set by appending elements other than current fold
-        train_set = pandas.DataFrame()
+        train_set = pd.DataFrame()
         for j in range(number_of_folds):
             if j != i:
                 train_set = train_set.append(split_dfs[j])
@@ -46,8 +53,8 @@ def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int
             i = 0
             for train_index, train_row in train_set_x.iterrows():
 
-                first_point = numpy.array(train_row.values.tolist())
-                second_point = numpy.array(test_row.values.tolist())
+                first_point = np.array(train_row.values.tolist())
+                second_point = np.array(test_row.values.tolist())
                 current_distance = dist.pairwise(np.expand_dims(first_point, axis=0),
                                                  np.expand_dims(second_point, axis=0))
 
@@ -85,3 +92,60 @@ def measure_performance(df: pandas.DataFrame, k_value: int, number_of_folds: int
     total_mape = sum(mape_list) / len(mape_list)
 
     return total_mse, total_rmse, total_mape
+
+
+def main():
+    dirname = os.path.dirname(__file__)
+    dataset_file_path = os.path.join(dirname, conf.PRODUCTIVITY_DATASET_FILE_PATH)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset_path',
+                        default=dataset_file_path,
+                        help='absolute path of the dataset you want to use, default: '
+                             '{path to project}/data/raw/garments_worker_productivity.csv')
+    parser.add_argument('--number_of_folds',
+                        type=int,
+                        default=3,
+                        help='number of folds to use for k-fold cross validation, default: 3')
+    parser.add_argument('--k',
+                        type=int,
+                        default=3,
+                        help='k parameter to use in KNN, default: 3')
+    parser_args = parser.parse_args()
+
+    df = pd.read_csv(parser_args.dataset_path)
+    preprocessed_df = prep.preprocess_productivity_dataset(df, normalize=True)
+
+    print("Running created knn algorithm with euclidean distance as similarity metric as EUCLIDEAN DISTANCE"
+          " and k value: ", parser_args.k)
+
+    # Run knn with created similarity matrix 1 and measure performance
+    start_time = time.time()
+    knn_1_mse, knn_1_rmse, knn_1_mape = \
+        measure_performance(preprocessed_df, parser_args.k, parser_args.number_of_folds,
+                            DistanceMetrics.EUCLIDEAN_DISTANCE)
+    end_time = time.time()
+
+    print("MSE: ", knn_1_mse)
+    print("RMSE: ", knn_1_rmse)
+    print("MAPE: ", knn_1_mape)
+    print("Time passed: ", end_time - start_time, " seconds\n")
+
+    print("Running created knn algorithm with manhattan distance as similarity metric as MANHATTAN DISTANCE"
+          " and k value: ", parser_args.k)
+
+    # Run knn with created similarity matrix 2 and measure performance
+    start_time = time.time()
+    knn_2_mse, knn_2_rmse, knn_2_mape = \
+        measure_performance(preprocessed_df, parser_args.k,
+                            parser_args.number_of_folds, DistanceMetrics.MANHATTAN_DISTANCE)
+    end_time = time.time()
+
+    print("MSE: ", knn_2_mse)
+    print("RMSE: ", knn_2_rmse)
+    print("MAPE: ", knn_2_mape)
+    print("Time passed: ", end_time - start_time, " seconds\n")
+
+
+if __name__ == '__main__':
+    main()
